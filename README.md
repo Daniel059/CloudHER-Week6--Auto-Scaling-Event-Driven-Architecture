@@ -7,3 +7,4 @@ Two labs from Week 6 of the CloudHER by WIICA mentorship program.
 
 ## Lab 2: Event-Driven S3 → Lambda → CloudWatch
 (coming soon)
+.
