@@ -1,146 +1,45 @@
-# AWS Auto Scaling & Application Load Balancer Lab
+# CloudHER Week 6 — AWS Auto Scaling & Event-Driven Architecture
 
-CloudHER by WIICA — Week 6 Project  
-Amazon EC2 Auto Scaling + Application Load Balancer + Multi-AZ Deployment
+A hands-on AWS learning project covering **EC2 Auto Scaling, Application Load Balancing, Multi-AZ architecture, health checks, IMDSv2, and event-driven computing with Lambda**.
 
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Prerequisites](#prerequisites)
-- [Project Structure](#project-structure)
-- [Step-by-Step Guide](#step-by-step-guide)
-- [Troubleshooting Notes](#troubleshooting-notes)
-- [Testing Load Balancing](#testing-load-balancing)
-- [Testing Auto Scaling](#testing-auto-scaling)
-- [Deliverables Checklist](#deliverables-checklist)
-- [Skills Demonstrated](#skills-demonstrated)
-- [What I Learned](#what-i-learned)
-- [Cleanup](#cleanup)
-- [Author](#author)
-- [Acknowledgements](#acknowledgements)
-- [License](#license)
-
----
-
-## Overview
-
-This project is a hands-on AWS lab focused on **high availability, load balancing, and automatic scaling**.
-
-The goal was to move from deploying a single EC2 web server to building a more resilient architecture where:
-
-- An **Application Load Balancer (ALB)** distributes incoming HTTP traffic.
-- An **Auto Scaling Group (ASG)** maintains the desired number of EC2 instances.
-- EC2 instances are deployed across **multiple Availability Zones**.
-- A **Launch Template** provides a consistent configuration for newly created instances.
-- **Health checks** allow unhealthy instances to be replaced automatically.
-- **CloudWatch metrics** can be used to trigger scale-out and scale-in events.
-
-This lab builds directly on the networking concepts from the previous CloudHER VPC lab and demonstrates how those foundations support a production-style AWS architecture.
-
-The most important lesson from this project was that **scaling is not simply launching more servers**. The servers need consistent configuration, healthy networking, correct security rules, and a load balancer capable of distributing traffic between them.
+> **Goal:** Build a web application that can automatically run across multiple EC2 instances, distribute traffic through an Application Load Balancer, and scale when demand increases.
 
 ---
 
 ## Architecture
 
 ```text
-                              Internet
-                                  │
-                                  ▼
-                    ┌─────────────────────────┐
-                    │  Application Load       │
-                    │  Balancer (ALB)         │
-                    │  Port 80 / HTTP         │
-                    └────────────┬────────────┘
-                                 │
-                       Target Group :80
-                                 │
-                ┌────────────────┴────────────────┐
-                │                                 │
-                ▼                                 ▼
-       ┌─────────────────┐              ┌─────────────────┐
-       │   EC2 Instance  │              │   EC2 Instance  │
-       │   us-east-1a    │              │   us-east-1b    │
-       │                 │              │                 │
-       │   Apache/httpd  │              │   Apache/httpd  │
-       │   Web Server    │              │   Web Server    │
-       └─────────────────┘              └─────────────────┘
-                ▲                                 ▲
-                │                                 │
-                └──────────── Auto Scaling ───────┘
-                              Group
-                                 │
-                                 ▼
-                    ┌─────────────────────────┐
-                    │    Launch Template      │
-                    │                         │
-                    │ Amazon Linux 2023       │
-                    │ Apache                  │
-                    │ User Data               │
-                    │ IMDSv2 metadata calls   │
-                    └─────────────────────────┘
-
-                         CloudWatch
-                             │
-                             ▼
-                   Scaling Policy / Alarm
-                             │
-                             ▼
-                    ASG launches or
-                    terminates instances
+                         Internet
+                            │
+                            ▼
+                 ┌─────────────────────┐
+                 │ Application Load     │
+                 │ Balancer :80         │
+                 └──────────┬──────────┘
+                            │
+                     Target Group
+                       /       \
+                      /         \
+                     ▼           ▼
+              EC2 us-east-1a  EC2 us-east-1b
+                    │              │
+                    └──────┬───────┘
+                           │
+                    Auto Scaling Group
+                           │
+                    Launch Template
+                           │
+                    CloudWatch Scaling
 ```
 
-### Architecture Components
+The project is divided into:
 
-| Component | Purpose |
-|---|---|
-| Amazon VPC | Provides the network environment |
-| Public Subnets | Host the internet-facing ALB and EC2 instances |
-| Internet Gateway | Provides internet connectivity |
-| Application Load Balancer | Distributes HTTP requests |
-| Target Group | Registers and health-checks EC2 instances |
-| Launch Template | Defines how new EC2 instances are created |
-| Auto Scaling Group | Maintains the desired instance capacity |
-| EC2 | Runs the Apache web application |
-| CloudWatch | Provides monitoring and scaling metrics |
-| Security Groups | Control inbound and outbound traffic |
+- **Lab 1 — Auto Scaling:** EC2, Launch Template, Auto Scaling Group, Target Group, ALB and Multi-AZ deployment. ✅ **Complete**
+- **Lab 2 — Event Driven:** Lambda + event-driven architecture  
 
----
-
-## Prerequisites
-
-Before starting this lab, you should have:
-
-- An AWS account
-- Basic knowledge of EC2 and VPC
-- A working VPC with at least two Availability Zones
-- Two public subnets in different Availability Zones
-- An Internet Gateway
-- Route tables configured for internet access
-- A modern web browser
-- Basic Linux command-line knowledge
-- Git installed locally if cloning this repository
-
-### AWS Region
-
-This lab was completed in:
-
-```text
-US East (N. Virginia)
-us-east-1
-```
-
-The EC2 instances were distributed across:
-
-```text
-us-east-1a
-us-east-1b
-```
-
-Using multiple Availability Zones demonstrates the high-availability benefit of the architecture.
+  > 🚧 **Coming Soon** — The Lambda magic is still brewing in the cloud kitchen.  
+  > Stay tuned… the event-driven side of this project is on its way and will land here shortly.  
+  > (Spoiler: things are about to get reactive ⚡)
 
 ---
 
@@ -152,7 +51,7 @@ CLOUDHER-WEEK6-AUTOSCALING/
 ├── ec2-launch-template/
 │   └── user_data.sh
 │
-├── lambda/
+├── lambda/                          ← Lab 2 (coming soon)
 │
 ├── screenshots/
 │   ├── lab1-autoscaling/
@@ -167,138 +66,109 @@ CLOUDHER-WEEK6-AUTOSCALING/
 │   │   ├── 08a-alb-browser-test-1.png
 │   │   └── 08a-alb-browser-test-2.png
 │   │
-│   └── lab2-eventdriven/
+│   └── lab2-eventdriven/            ← Screenshots landing soon
 │
 ├── LICENSE
 └── README.md
 ```
 
-The repository is organized into two main labs:
+---
 
-- **Lab 1 — Auto Scaling:** EC2 Launch Template, Auto Scaling Group, Target Group, Application Load Balancer, health checks, and multi-AZ load balancing.
-- **Lab 2 — Event Driven:** Lambda and event-driven architecture work.
-- **Screenshots:** Visual evidence from the AWS console and browser tests is stored under `screenshots/lab1-autoscaling/`.
+# Lab 1 — EC2 Auto Scaling & Load Balancing
 
-
-# Step-by-Step Guide
-
-## Step 1: Prepare the VPC and Subnets
-
-The Auto Scaling architecture requires networking that supports deployment across multiple Availability Zones.
-
-The lab uses two public subnets:
-
-```text
-Public-Subnet-A → us-east-1a
-Public-Subnet-B → us-east-1b
-```
-
-Both subnets must have:
-
-```text
-0.0.0.0/0 → Internet Gateway
-```
-
-This allows the EC2 instances and ALB to communicate with the internet.
-
-### Why two Availability Zones?
-
-If an entire Availability Zone becomes unavailable, instances in another Availability Zone can continue serving traffic.
-
-This is one of the fundamental principles behind highly available AWS architectures.
+**Step-by-Step Guide**  
+Follow these steps **in order** to replicate this deployment.  
+Each step’s screenshot sits right below it, so the evidence lines up with the activity that produced it.
 
 ---
 
-## Step 2: Create the Security Groups
+### Step 1: Create the Security Groups
 
-At least two security groups are useful for this architecture.
+We create two separate security groups so traffic flows the right way:
 
-### ALB Security Group
+- **ALB Security Group** → allows HTTP from the internet  
+- **EC2 Security Group** → allows HTTP only from the ALB
 
-Allow:
+#### 1.1 Create the ALB Security Group
 
-| Type | Protocol | Port | Source |
-|---|---|---:|---|
-| HTTP | TCP | 80 | `0.0.0.0/0` |
+1. Open the **EC2 Console → Security Groups → Create security group**.
+2. **Name**: `CloudHER-ALB-SG`
+3. **Description**: `Allow HTTP from the internet`
+4. **VPC**: Select your default VPC (or the one you are using)
+5. Under **Inbound rules** → **Add rule**:
+   - Type: **HTTP**
+   - Protocol: TCP
+   - Port: **80**
+   - Source: `0.0.0.0/0`
+6. Leave **Outbound rules** as default → click **Create security group**
 
-The ALB is the public entry point, so HTTP traffic can reach it from the internet.
+![ALB Security Group](screenshots/lab1-autoscaling/01a-alb-security-group.png)
 
-### EC2 Security Group
+#### 1.2 Create the EC2 Security Group
 
-Allow:
+1. Still in **Security Groups → Create security group**
+2. **Name**: `CloudHER-EC2-SG`
+3. **Description**: `Allow HTTP only from the ALB`
+4. **VPC**: Same VPC as above
+5. Under **Inbound rules** → **Add rule**:
+   - Type: **HTTP**
+   - Protocol: TCP
+   - Port: **80**
+   - Source: Select the **CloudHER-ALB-SG** security group  
+     (do **not** use `0.0.0.0/0`)
+6. Leave **Outbound rules** as default → click **Create security group**
 
-| Type | Protocol | Port | Source |
-|---|---|---:|---|
-| HTTP | TCP | 80 | ALB Security Group |
+![EC2 Security Group](screenshots/lab1-autoscaling/01b-ec2-security-group.png)
 
-The important security improvement is that EC2 does not need to accept HTTP traffic directly from the entire internet.
-
-Instead:
+**Why two security groups?**  
+This creates the intended traffic path:
 
 ```text
 Internet → ALB → EC2
 ```
 
-This creates a cleaner security boundary.
+instead of exposing the EC2 web servers directly to the internet.
 
 ---
 
-## Step 3: Create the Launch Template
+### Step 2: Create the Launch Template
 
-Create a Launch Template that defines the configuration of every EC2 instance launched by the Auto Scaling Group.
+The Launch Template defines how every EC2 instance created by the Auto Scaling Group should be configured. This gives you **consistency**.
 
-Example configuration:
+1. Open **EC2 Console → Launch Templates → Create launch template**
+2. **Launch template name**: `CloudHER-Launch-Template`
+3. **Template version description**: `v1 – Apache + IMDSv2`
+4. Under **Application and OS Images (Amazon Machine Image)**:
+   - Choose **Amazon Linux 2023**
+5. **Instance type**: `t3.micro` (or `t2.micro`)
+6. **Key pair** (optional for this lab): Select an existing key pair or continue without one
+7. Under **Network settings**:
+   - Security groups → Select **CloudHER-EC2-SG**
+8. Expand **Advanced details** → find **User data**
+9. Paste the contents of `ec2-launch-template/user_data.sh`  
+   (or upload the file)
+10. Leave everything else default → click **Create launch template**
 
-```text
-Name:
-CloudHER-Launch-Template
+![Launch Template](screenshots/lab1-autoscaling/02-launch-template.png)
 
-AMI:
-Amazon Linux 2023
-
-Instance type:
-t3.micro
-
-Security group:
-EC2 Web Security Group
-
-Subnet:
-Controlled by Auto Scaling Group
-
-Public IP:
-Enabled where required by the lab
-```
-
-The Launch Template is important because the ASG needs a repeatable definition of what a new instance should look like.
-
-If an instance fails, the ASG can launch a replacement using the same configuration.
+**Tip:** When the Auto Scaling Group needs a new instance, AWS will use this exact configuration every time.
 
 ---
 
-## Step 4: Configure EC2 User Data
+### Step 3: Understand the User Data Script (IMDSv2)
 
-The instances need to configure themselves automatically when they launch.
+The User Data script runs automatically the first time an instance boots. It does the following:
 
-A simplified user-data script can:
+1. Updates the system packages
+2. Installs Apache (`httpd`)
+3. Starts and enables Apache
+4. Requests an **IMDSv2** session token
+5. Uses that token to fetch the Instance ID and Availability Zone
+6. Creates a simple HTML page that displays those values
 
-1. Update packages.
-2. Install Apache.
-3. Enable Apache.
-4. Start Apache.
-5. Retrieve EC2 metadata using IMDSv2.
-6. Create a webpage containing the instance ID and Availability Zone.
-
-Example:
+Key part of the script (IMDSv2):
 
 ```bash
-#!/bin/bash
-
-dnf update -y
-dnf install -y httpd curl
-
-systemctl enable httpd
-systemctl start httpd
-
 TOKEN=$(curl -sS -X PUT \
   "http://169.254.169.254/latest/api/token" \
   -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
@@ -310,817 +180,325 @@ INSTANCE_ID=$(curl -sS \
 AZ=$(curl -sS \
   -H "X-aws-ec2-metadata-token: $TOKEN" \
   http://169.254.169.254/latest/meta-data/placement/availability-zone)
-
-cat > /var/www/html/index.html <<EOF
-<!DOCTYPE html>
-<html>
-<head>
-    <title>CloudHER Auto Scaling Lab</title>
-</head>
-<body>
-    <h1>CloudHER Auto Scaling Lab</h1>
-    <p>Application Load Balancer is working.</p>
-    <p><strong>Instance ID:</strong> $INSTANCE_ID</p>
-    <p><strong>Availability Zone:</strong> $AZ</p>
-</body>
-</html>
-EOF
 ```
 
-### Why display the Instance ID?
-
-The Instance ID makes it possible to visually prove that the ALB is distributing requests between different EC2 instances.
-
-The Availability Zone provides additional evidence that the instances are distributed across multiple zones.
+**Why IMDSv2 matters:**  
+Older scripts that call the metadata service without a token often return empty values. IMDSv2 is the secure, recommended method and is required in many AWS environments.
 
 ---
 
-## Step 5: Create the Target Group
+### Step 4: Create the Target Group
 
-Create an EC2 target group.
+The Target Group is the pool of instances that the Load Balancer will send traffic to. It also performs health checks.
 
-Example:
+1. Open **EC2 Console → Target Groups → Create target group**
+2. **Target type**: Instances
+3. **Target group name**: `CloudHER-TG`
+4. **Protocol**: HTTP  
+   **Port**: 80
+5. **VPC**: Same VPC used earlier
+6. **Health check protocol**: HTTP
+7. **Health check path**: `/`
+8. Leave the remaining settings as default → click **Next**
+9. On the “Register targets” page, do **not** register any instances yet  
+   (the Auto Scaling Group will do this automatically) → click **Create target group**
 
-```text
-Target type:
-Instances
+![Target Group](screenshots/lab1-autoscaling/03-target-group.png)
 
-Protocol:
-HTTP
-
-Port:
-80
-
-Health check protocol:
-HTTP
-
-Health check path:
-/ 
-```
-
-The target group is responsible for determining whether registered EC2 instances are healthy enough to receive traffic.
-
-A healthy target should eventually appear as:
-
-```text
-Health status: Healthy
-```
+Only healthy targets should receive traffic from the ALB.
 
 ---
 
-## Step 6: Create the Application Load Balancer
+### Step 5: Create the Application Load Balancer
 
-Create an internet-facing Application Load Balancer.
+The ALB is the public entry point for your application.
 
-Example:
+1. Open **EC2 Console → Load Balancers → Create load balancer**
+2. Choose **Application Load Balancer**
+3. **Name**: `CloudHER-ALB`
+4. **Scheme**: Internet-facing
+5. **IP address type**: IPv4
+6. Under **Network mapping**:
+   - Select at least **two Availability Zones** (for example `us-east-1a` and `us-east-1b`)
+   - Choose a **public subnet** in each AZ
+7. **Security groups**: Select **CloudHER-ALB-SG**
+8. Under **Listeners and routing**:
+   - Protocol: **HTTP**, Port: **80**
+   - Default action: **Forward to** → select `CloudHER-TG`
+9. Review the settings → click **Create load balancer**
 
-```text
-Name:
-CloudHER-ALB
+![Application Load Balancer](screenshots/lab1-autoscaling/04-load-balancer.png)
 
-Scheme:
-Internet-facing
-
-IP address type:
-IPv4
-
-Listener:
-HTTP : 80
-```
-
-Select public subnets in at least two Availability Zones.
-
-Attach the ALB security group.
-
-For the listener's default action:
-
-```text
-Forward to:
-CloudHER Target Group
-```
-
-The resulting traffic flow is:
+**Resulting request path:**
 
 ```text
 Browser
-   │
-   ▼
-ALB :80
-   │
-   ▼
+   ↓
+Application Load Balancer
+   ↓
 Target Group
-   │
-   ├── EC2 us-east-1a
-   │
-   └── EC2 us-east-1b
-```
-
----
-
-## Step 7: Create the Auto Scaling Group
-
-Create the Auto Scaling Group using the Launch Template.
-
-Example:
-
-```text
-Name:
-CloudHER-ASG
-
-Launch Template:
-CloudHER-Launch-Template
-
-Minimum capacity:
-2
-
-Desired capacity:
-2
-
-Maximum capacity:
-4
-```
-
-Select the two public subnets:
-
-```text
-us-east-1a
-us-east-1b
-```
-
-Attach the existing target group.
-
-Enable:
-
-```text
-Elastic Load Balancing health checks
-```
-
-This allows the Auto Scaling Group to consider load-balancer health when managing instances.
-
----
-
-## Step 8: Verify the Instances
-
-After the ASG launches the instances, open:
-
-```text
-EC2 → Instances
-```
-
-You should see two running instances.
-
-The expected result is approximately:
-
-```text
-Instance 1 → us-east-1a
-Instance 2 → us-east-1b
-```
-
-The exact Instance IDs will differ because AWS generates them dynamically.
-
-Both instances should be registered with the target group.
-
----
-
-## Step 9: Verify Target Health
-
-Open:
-
-```text
-EC2
-→ Target Groups
-→ CloudHER Target Group
-→ Targets
-```
-
-Wait until both targets show:
-
-```text
-Healthy
-```
-
-If a target is unhealthy, do not immediately recreate everything.
-
-Troubleshoot in layers:
-
-```text
-EC2
-  ↓
-Apache
-  ↓
-Security Group
-  ↓
-Target Group
-  ↓
-ALB
-  ↓
-Browser
-```
-
----
-
-## Step 10: Test the Application Load Balancer
-
-Copy the ALB DNS name.
-
-It will look similar to:
-
-```text
-CloudHER-ALB-xxxxxxxx.us-east-1.elb.amazonaws.com
-```
-
-Open it in the browser using:
-
-```text
-http://<ALB-DNS-NAME>
-```
-
-The page should display:
-
-```text
-CloudHER Auto Scaling Lab
-
-Application Load Balancer is working.
-
-Instance ID: i-xxxxxxxxxxxxxxxxx
-Availability Zone: us-east-1a
-```
-
-The exact values will vary.
-
----
-
-# Troubleshooting Notes
-
-This project included several real AWS troubleshooting scenarios. These were not simply configuration mistakes; they demonstrated how AWS components interact.
-
-## 1. Instance ID and Availability Zone Appeared Blank
-
-### Symptom
-
-The webpage loaded successfully, but the following fields were empty:
-
-```text
-Instance ID:
-Availability Zone:
-```
-
-The Apache server itself was working, so the problem was not the web server.
-
-### Root Cause
-
-The original `curl` calls were written using the older IMDSv1 metadata access pattern.
-
-The AWS environment required **IMDSv2**, which requires a session token before metadata can be retrieved.
-
-### Incorrect Approach
-
-```bash
-curl http://169.254.169.254/latest/meta-data/instance-id
-```
-
-### Correct IMDSv2 Approach
-
-First request a token:
-
-```bash
-TOKEN=$(curl -X PUT \
-  "http://169.254.169.254/latest/api/token" \
-  -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
-```
-
-Then pass the token:
-
-```bash
-curl \
-  -H "X-aws-ec2-metadata-token: $TOKEN" \
-  http://169.254.169.254/latest/meta-data/instance-id
-```
-
-The same token-based approach was used for the Availability Zone.
-
-### Lesson
-
-A page can load correctly while application metadata is still broken.
-
-Always distinguish between:
-
-```text
-Web server availability
-```
-
-and:
-
-```text
-Application configuration correctness
-```
-
----
-
-## 2. Missing Public IP / Subnet Configuration
-
-During troubleshooting, one instance did not behave like the expected public-facing instance.
-
-The investigation highlighted the importance of checking:
-
-```text
-VPC
-→ Subnet
-→ Route Table
-→ Internet Gateway
-→ Public IPv4 address
-→ Security Group
-```
-
-A subnet being named "Public" does not automatically make an EC2 instance reachable from the internet.
-
-For a public EC2 deployment, the relevant path must exist:
-
-```text
-Internet
    ↓
-Internet Gateway
-   ↓
-Public Route Table
-   ↓
-Public Subnet
-   ↓
-EC2
+Healthy EC2 Instance
 ```
 
-The subnet also needs the appropriate public IPv4 configuration when the instance is expected to communicate directly with the internet.
+---
+
+### Step 6: Create the Auto Scaling Group
+
+The Auto Scaling Group uses the Launch Template to maintain the desired number of EC2 instances and can scale when needed.
+
+1. Open **EC2 Console → Auto Scaling Groups → Create Auto Scaling group**
+2. **Name**: `CloudHER-ASG`
+3. **Launch template**: Select `CloudHER-Launch-Template` (version 1)
+4. Click **Next**
+5. **VPC**: Same VPC
+6. **Availability Zones and subnets**: Select the same two public subnets you used for the ALB (`us-east-1a` and `us-east-1b`)
+7. Click **Next**
+8. Under **Load balancing**:
+   - Choose **Attach to an existing load balancer**
+   - Select **Choose from your load balancer target groups**
+   - Select `CloudHER-TG`
+9. **Health check type**: Turn on **ELB** health checks (in addition to EC2)
+10. Click **Next**
+11. **Group size**:
+    - Desired capacity: **2**
+    - Minimum capacity: **2**
+    - Maximum capacity: **4**
+12. (Optional) Add a scaling policy later — for now you can skip it
+13. Review everything → click **Create Auto Scaling group**
+
+![Auto Scaling Group Configuration](screenshots/lab1-autoscaling/05-asg-config.png)
+
+The ASG will now launch 2 instances across the two Availability Zones and automatically register them with the Target Group.
 
 ---
 
-## 3. Old Instance Still Running the Broken User Data
+### Step 7: Verify the EC2 Instances
 
-Another important issue occurred because the Auto Scaling Group had more than one instance created at different points during troubleshooting.
+1. Go to **EC2 Console → Instances**
+2. You should see two instances in the **running** state
+3. Check the **Availability Zone** column — one should be in `us-east-1a` and the other in `us-east-1b`
 
-One older instance was still running the previous launch configuration while the newer replacement instance used the corrected configuration.
-
-This produced inconsistent results.
-
-### Investigation
-
-The EC2 launch times revealed:
-
-```text
-Older instance
-→ launched approximately one hour earlier
-
-Newer instance
-→ launched approximately eleven minutes earlier
-```
-
-The older instance had not been replaced.
-
-### Resolution
-
-The old instance was terminated manually.
-
-The Auto Scaling Group detected that capacity had fallen below the desired capacity and automatically launched a replacement using the corrected configuration.
-
-### Lesson
-
-When troubleshooting Auto Scaling, always verify:
-
-- Instance launch time
-- Launch Template version
-- User Data
-- Availability Zone
-- Target health
-- ASG activity history
-
-Two instances in the same ASG can temporarily behave differently if they were created from different configurations.
-
----
-
-## 4. Why Launch Template Versions Matter
-
-Updating a Launch Template does not necessarily rewrite already-running EC2 instances.
-
-Existing instances continue running the configuration they were launched with.
-
-The Launch Template is primarily used when AWS launches a new instance.
-
-Therefore:
-
-```text
-Old Instance
-     │
-     └── Keeps old configuration
-
-New Instance
-     │
-     └── Uses selected Launch Template version
-```
-
-This is why terminating an incorrectly configured instance can cause the ASG to replace it with a correctly configured instance.
-
----
-
-## 5. Troubleshooting Method
-
-The most useful diagnostic sequence from this lab was:
-
-```text
-1. Check the EC2 instance
-2. Check Apache
-3. Check User Data
-4. Check instance metadata
-5. Check Security Groups
-6. Check subnet and route table
-7. Check Target Group health
-8. Check ALB
-9. Check browser
-10. Check Auto Scaling Activity history
-```
-
-This prevents random configuration changes and makes the troubleshooting process reproducible.
-
----
-
-# Visual Evidence
-
-The screenshots below document the actual AWS resources and testing performed during Lab 1.
-
-## 1. Application Load Balancer Security Group
-
-The ALB security group allows HTTP traffic on port 80 from the internet.
-
-<img src="screenshots/lab1-autoscaling/01a-alb-security-group.png" alt="ALB Security Group" width="900">
-
----
-
-## 2. EC2 Security Group
-
-The EC2 security group controls access to the web servers.
-
-<img src="screenshots/lab1-autoscaling/01b-ec2-security-group.png" alt="EC2 Security Group" width="900">
-
----
-
-## 3. Launch Template
-
-The Launch Template defines the configuration used when the Auto Scaling Group creates EC2 instances.
-
-<img src="screenshots/lab1-autoscaling/02-launch-template.png" alt="EC2 Launch Template" width="900">
-
----
-
-## 4. Target Group
-
-The Target Group registers the EC2 instances and performs health checks before allowing them to receive traffic.
-
-<img src="screenshots/lab1-autoscaling/03-target-group.png" alt="Target Group" width="900">
-
----
-
-## 5. Application Load Balancer
-
-The internet-facing Application Load Balancer receives incoming HTTP traffic and forwards requests to healthy targets.
-
-<img src="screenshots/lab1-autoscaling/04-load-balancer.png" alt="Application Load Balancer" width="900">
-
----
-
-## 6. Auto Scaling Group Configuration
-
-The Auto Scaling Group maintains the desired EC2 capacity and launches replacement instances when necessary.
-
-<img src="screenshots/lab1-autoscaling/05-asg-config.png" alt="Auto Scaling Group Configuration" width="900">
-
----
-
-## 7. EC2 Instances Running
-
-The final deployment contains EC2 instances distributed across Availability Zones.
-
-<img src="screenshots/lab1-autoscaling/06-ec2-instances-running.png" alt="EC2 Instances Running" width="900">
-
----
-
-## 8. Target Group Health Checks
-
-Both EC2 instances were successfully registered with the Target Group and reached a healthy state.
-
-<img src="screenshots/lab1-autoscaling/07-target-group-healthy.png" alt="Healthy Target Group Targets" width="900">
-
----
-
-## 9. ALB Browser Test — Instance 1
-
-The ALB successfully served the application from one of the EC2 instances. The page displays the Instance ID and Availability Zone, allowing the load-balancing behavior to be verified.
-
-<img src="screenshots/lab1-autoscaling/08a-alb-browser-test-1.png" alt="ALB Browser Test Instance 1" width="900">
-
----
-
-## 10. ALB Browser Test — Instance 2
-
-Refreshing the ALB endpoint produced a response from the other EC2 instance, demonstrating traffic distribution across the deployment.
-
-<img src="screenshots/lab1-autoscaling/08a-alb-browser-test-2.png" alt="ALB Browser Test Instance 2" width="900">
-
-> **Note:** The second browser screenshot is named `08a-alb-browser-test-2.png` in the repository, so the README intentionally uses that exact filename.
-
----
-
-# Testing Load Balancing
-
-The first major validation was proving that the ALB could distribute requests between two different EC2 instances.
-
-The webpage was intentionally designed to display:
-
-```text
-Instance ID
-Availability Zone
-```
-
-Refresh the ALB URL multiple times.
-
-You should eventually see responses from different instances.
-
-Example:
-
-### Request 1
-
-```text
-Instance ID: i-0647d365c481e8008
-Availability Zone: us-east-1a
-```
-
-### Request 2
-
-```text
-Instance ID: i-093c25f1ba6f4be2e
-Availability Zone: us-east-1b
-```
-
-The exact behavior and ordering can vary because load-balancing decisions are handled by AWS.
-
-### Evidence
-
-The two instances used during the final validation were:
+Example (your Instance IDs will be different):
 
 ```text
 i-0647d365c481e8008 → us-east-1a
 i-093c25f1ba6f4be2e → us-east-1b
 ```
 
-Both instances were populated correctly after the IMDSv2 fix.
-
-The browser evidence is embedded directly in the [Visual Evidence](#visual-evidence) section above:
-
-```text
-screenshots/lab1-autoscaling/08a-alb-browser-test-1.png
-screenshots/lab1-autoscaling/08a-alb-browser-test-2.png
-```
-
-These screenshots provide visual evidence that the ALB is serving responses from different instances across different Availability Zones.
+![EC2 Instances Running](screenshots/lab1-autoscaling/06-ec2-instances-running.png)
 
 ---
 
-# Testing Auto Scaling
+### Step 8: Verify Target Health
 
-The next stage is to demonstrate that the Auto Scaling Group can respond to increased demand.
+1. Go to **EC2 Console → Target Groups → CloudHER-TG → Targets** tab
+2. Wait a few minutes for the health checks to complete
+3. Both instances should eventually show status **Healthy**
 
-## Step 1: Configure a Scaling Policy
+This confirms that:
 
-A target tracking policy can use average CPU utilization.
+- Apache is running
+- Port 80 is reachable
+- The security groups allow the required traffic
+- The Target Group health check is succeeding
 
-Example:
-
-```text
-Metric:
-Average CPU Utilization
-
-Target:
-50%
-```
-
-The ASG can then launch additional instances when average CPU utilization rises above the configured target.
+![Healthy Target Group](screenshots/lab1-autoscaling/07-target-group-healthy.png)
 
 ---
 
-## Step 2: Generate CPU Load
+### Step 9: Test Load Balancing
 
-Connect to an EC2 instance and generate CPU activity.
+1. Go to **EC2 Console → Load Balancers → CloudHER-ALB**
+2. Copy the **DNS name**
+3. Open a browser and go to:
 
-For example, a controlled Linux CPU workload can be used during the lab.
+```text
+http://<ALB-DNS-NAME>
+```
 
-One possible approach is:
+4. The page should display the EC2 Instance ID and Availability Zone
+5. **Refresh the page several times**
+
+One request may return:
+
+```text
+Instance ID: i-0647d365c481e8008
+Availability Zone: us-east-1a
+```
+
+while another can return:
+
+```text
+Instance ID: i-093c25f1ba6f4be2e
+Availability Zone: us-east-1b
+```
+
+This proves that the ALB is distributing requests across the EC2 instances.
+
+![ALB Browser Test — Instance 1](screenshots/lab1-autoscaling/08a-alb-browser-test-1.png)
+
+![ALB Browser Test — Instance 2](screenshots/lab1-autoscaling/08a-alb-browser-test-2.png)
+
+---
+
+# Troubleshooting
+
+## IMDSv2 Token Requirement
+
+**Symptom:** The webpage loads, but the Instance ID and Availability Zone are blank.
+
+**Cause:** The original metadata requests used the older IMDSv1-style approach:
+
+```bash
+curl http://169.254.169.254/latest/meta-data/instance-id
+```
+
+Many AWS environments now require **IMDSv2**, which needs a session token.
+
+**Solution:**
+
+```text
+Request IMDSv2 token
+        ↓
+Pass token in metadata request
+        ↓
+Retrieve Instance ID / Availability Zone
+        ↓
+Generate webpage
+```
+
+**Lesson:** A web server can be healthy while the application configuration running on it is still incorrect. Troubleshoot each layer separately.
+
+---
+
+## Public IP and Networking Issue
+
+If an instance does not behave as expected for public connectivity, check the full network path:
+
+```text
+VPC
+ ↓
+Subnet
+ ↓
+Route Table
+ ↓
+Internet Gateway
+ ↓
+Public IPv4
+ ↓
+Security Group
+```
+
+A subnet being labelled “Public” is not enough — the network path must actually provide internet connectivity.
+
+### Recommended Troubleshooting Order
+
+```text
+EC2
+ ↓
+Apache
+ ↓
+User Data
+ ↓
+Metadata
+ ↓
+Security Group
+ ↓
+Subnet / Route Table
+ ↓
+Target Group
+ ↓
+ALB
+ ↓
+Browser
+```
+
+This approach makes it easier to isolate the problem instead of changing multiple AWS settings at once.
+
+---
+
+## Old Instance Using the Previous Configuration
+
+During troubleshooting, one older instance was still running the broken version of the User Data script while a newer replacement was using the corrected version.
+
+**What happened:**
+- The EC2 launch times showed the difference
+- The old instance was terminated
+- The Auto Scaling Group detected that capacity had dropped below the desired value
+- It automatically launched a replacement using the corrected configuration
+
+**Lesson:** When troubleshooting an ASG, always check:
+
+- Instance launch time
+- Launch Template version
+- User Data
+- Availability Zone
+- Target health
+- ASG Activity history
+
+Changing a Launch Template does **not** automatically reconfigure existing instances.
+
+---
+
+# Auto Scaling Test (Optional but Recommended)
+
+To demonstrate actual scale-out, you can add a target-tracking scaling policy.
+
+1. Open **EC2 → Auto Scaling Groups → CloudHER-ASG → Automatic scaling**
+2. Create a target tracking policy:
+   - Metric: **Average CPU Utilization**
+   - Target value: **50%**
+3. On one of the running instances, generate CPU load:
 
 ```bash
 sudo dnf install stress-ng -y
 stress-ng --cpu 2 --timeout 300s
 ```
 
-> Use CPU-load commands carefully and only for the duration required by the lab.
+4. Monitor:
+   - **CloudWatch → EC2 Metrics**
+   - **EC2 → Auto Scaling Groups → CloudHER-ASG → Activity**
 
----
-
-## Step 3: Monitor CloudWatch
-
-Open:
+**Expected behaviour:**
 
 ```text
-CloudWatch
-→ Metrics
-→ EC2
-→ Auto Scaling
+CPU increases
+      ↓
+CloudWatch detects increased utilization
+      ↓
+Scaling policy is triggered
+      ↓
+ASG launches another EC2 instance
+      ↓
+New instance joins Target Group
+      ↓
+Health check passes
+      ↓
+ALB can send traffic to it
 ```
 
-Monitor:
+This demonstrates **horizontal scaling** rather than manually creating servers.
+
+---
+
+# Key Concepts Learned
+
+### Auto Scaling vs Load Balancing
+
+They solve different problems:
 
 ```text
-CPUUtilization
+ALB:
+"Which healthy instance should receive this request?"
+
+ASG:
+"How many instances should be running?"
 ```
 
-The goal is to observe CPU usage increasing enough to trigger the configured scaling policy.
+Together they create a scalable application.
 
----
-
-## Step 4: Monitor ASG Activity
-
-Open:
-
-```text
-EC2
-→ Auto Scaling Groups
-→ CloudHER-ASG
-→ Activity
-```
-
-A successful scale-out should produce an activity event indicating that an additional instance was launched.
-
-The desired capacity may change from:
-
-```text
-2
-```
-
-to:
-
-```text
-3
-```
-
-depending on the scaling policy.
-
----
-
-## Step 5: Verify the New Instance
-
-Once the new instance launches:
-
-```text
-EC2 → Instances
-```
-
-Confirm that the new instance:
-
-- Is running
-- Uses the expected Launch Template
-- Has the expected User Data configuration
-- Registers with the target group
-- Becomes healthy
-- Can serve the application through the ALB
-
-This completes the basic Auto Scaling validation.
-
----
-
-# Deliverables Checklist
-
-- [ ] Custom VPC configured
-- [ ] Two public subnets across different Availability Zones
-- [ ] Internet Gateway configured
-- [ ] Correct route table associations
-- [ ] ALB security group configured
-- [ ] EC2 security group configured
-- [ ] Launch Template created
-- [ ] Amazon Linux 2023 configured
-- [ ] Apache installed automatically using User Data
-- [ ] IMDSv2 implemented in User Data
-- [ ] Target Group created
-- [ ] Application Load Balancer created
-- [ ] Auto Scaling Group created
-- [ ] Minimum/desired/maximum capacity configured
-- [ ] Both initial instances healthy
-- [ ] ALB successfully served the application
-- [ ] Instance ID displayed correctly
-- [ ] Availability Zone displayed correctly
-- [ ] Traffic verified across two instances
-- [ ] CPU load test completed
-- [ ] Auto Scaling scale-out event observed
-- [ ] ALB and EC2 security-group screenshots captured
-- [ ] Launch Template screenshot captured
-- [ ] Target Group screenshot captured
-- [ ] Load Balancer screenshot captured
-- [ ] Auto Scaling Group configuration screenshot captured
-- [ ] EC2 instances screenshot captured
-- [ ] Healthy targets screenshot captured
-- [ ] Two ALB browser-test screenshots captured
-- [ ] Screenshots saved in `screenshots/lab1-autoscaling/`
-
----
-
-# Skills Demonstrated
-
-### AWS Cloud
-
-- Amazon EC2
-- Amazon VPC
-- Application Load Balancer
-- Auto Scaling Groups
-- Launch Templates
-- Target Groups
-- CloudWatch
-- Security Groups
-- Availability Zones
-- Internet Gateways
-- Route Tables
-
-### Linux
-
-- Amazon Linux 2023
-- `dnf`
-- `systemctl`
-- Apache HTTP Server
-- Bash scripting
-- `curl`
-- EC2 Instance Metadata Service
-
-### DevOps / Infrastructure
-
-- Automated instance provisioning
-- Infrastructure configuration
-- Health checks
-- Load balancing
-- Horizontal scaling
-- Multi-AZ architecture
-- Configuration consistency
-- Failure replacement
-
-### Troubleshooting
-
-- IMDSv2 debugging
-- User Data debugging
-- Security Group analysis
-- Public IP troubleshooting
-- Launch Template version analysis
-- Target Group health analysis
-- ASG Activity investigation
-- Layer-by-layer cloud troubleshooting
-
----
-
-# What I Learned
-
-This lab changed how I think about scalability in AWS.
-
-### 1. Load balancing and auto scaling solve different problems
-
-The ALB answers:
-
-> "Which healthy instance should receive this request?"
-
-The ASG answers:
-
-> "How many instances should exist?"
-
-Together they provide a scalable application architecture.
-
----
-
-### 2. Auto Scaling depends heavily on consistent configuration
-
-If one instance has a broken User Data script and another has a corrected version, the ASG can appear inconsistent even though the infrastructure is technically working.
-
-This reinforced the importance of:
-
-```text
-Launch Template
-        ↓
-Consistent User Data
-        ↓
-Consistent Instances
-```
-
----
-
-### 3. IMDSv2 is important
-
-The metadata troubleshooting was one of the most valuable parts of the lab.
-
-The issue demonstrated that AWS security controls can affect scripts that appear correct at first glance.
-
-The corrected architecture now explicitly requests an IMDSv2 token before accessing metadata.
-
----
-
-### 4. Multi-AZ deployment improves availability
+### Multi-AZ Availability
 
 Running instances in:
 
@@ -1129,70 +507,103 @@ us-east-1a
 us-east-1b
 ```
 
-means that the application is not dependent on a single Availability Zone.
+reduces dependence on a single Availability Zone.
+
+### Health Checks
+
+An EC2 instance can be:
+
+```text
+Running
+```
+
+but still:
+
+```text
+Unhealthy
+```
+
+from the ALB’s perspective.  
+This is why Target Group health checks are important.
+
+### Configuration Consistency
+
+```text
+Launch Template
+       ↓
+User Data
+       ↓
+Consistent EC2 instances
+       ↓
+Healthy Target Group
+       ↓
+Reliable ALB traffic
+```
 
 ---
 
-### 5. Health checks are critical
+# Skills Practiced
 
-The ALB does not simply send traffic to every registered instance.
-
-It uses health checks to determine which targets are healthy.
-
-This means an instance can be running at the EC2 level while still being unhealthy from the application's perspective.
-
----
-
-### 6. Troubleshooting should be systematic
-
-The biggest practical lesson was:
-
-```text
-Don't guess.
-Trace the request.
-```
-
-For this architecture:
-
-```text
-Browser
-   ↓
-ALB
-   ↓
-Target Group
-   ↓
-Security Group
-   ↓
-EC2
-   ↓
-Apache
-   ↓
-Application
-```
-
-Testing each layer makes cloud troubleshooting much faster and more reliable.
+- Amazon EC2
+- Amazon VPC
+- Security Groups
+- Application Load Balancer
+- Target Groups
+- Auto Scaling Groups
+- Launch Templates
+- CloudWatch
+- Multi-AZ architecture
+- Amazon Linux
+- Apache
+- Bash / User Data
+- EC2 Instance Metadata Service (IMDSv2)
+- Health checks
+- Horizontal scaling
+- Cloud troubleshooting
 
 ---
 
 # Cleanup
 
-AWS resources can generate charges if left running.
+AWS resources can incur charges if they remain active.  
+After completing the lab, clean up in this order:
 
-After completing the lab and capturing the required evidence, clean up resources that are no longer needed.
+1. Scale the Auto Scaling Group desired capacity to **0**, or delete the Auto Scaling Group
+2. Terminate any remaining EC2 instances
+3. Delete the Application Load Balancer
+4. Delete the Target Group
+5. Delete unused Launch Templates
+6. Remove unused CloudWatch alarms and other resources created for the lab
+7. Verify the **AWS Billing** dashboard
 
-Recommended cleanup order:
+---
 
-1. Delete or scale down the Auto Scaling Group.
-2. Terminate remaining EC2 instances.
-3. Delete the Application Load Balancer.
-4. Delete the Target Group.
-5. Delete unused Launch Templates.
-6. Delete unused Security Groups.
-7. Remove unnecessary CloudWatch alarms.
-8. Delete unused networking resources if they were created specifically for this lab.
-9. Verify the AWS Billing dashboard.
+# What I Learned
 
-> Always review the AWS console before cleanup so you do not accidentally delete resources belonging to another project.
+The biggest lesson from this project was that AWS services are not isolated.  
+A working application depends on several layers working together:
+
+```text
+Networking
+    ↓
+Security
+    ↓
+EC2
+    ↓
+Application
+    ↓
+Target Group
+    ↓
+Load Balancer
+    ↓
+Auto Scaling
+    ↓
+Monitoring
+```
+
+The troubleshooting experience was especially valuable. Problems with **public connectivity, IMDSv2, User Data, Launch Template versions, and Auto Scaling behaviour** showed why cloud troubleshooting should be systematic rather than based on guesswork.
+
+This lab moved my understanding from simply **“running an EC2 instance”** to thinking about **availability, scalability, automation, health, and failure recovery**.
 
 ---
 
@@ -1202,28 +613,18 @@ Recommended cleanup order:
 
 Data & AI | Cloud Computing | Data Engineering | DevOps
 
-GitHub: [Daniel059](https://github.com/Daniel059)
+- GitHub: [Daniel059](https://github.com/Daniel059)
+- Portfolio: [Daniel Nzioki Musyoka — Data & AI Portfolio](https://daniel-nzioki-musyoka-data-and-ai-pro.netlify.app/)
 
-Portfolio: [Daniel Nzioki Musyoka — Data & AI Portfolio](https://daniel-nzioki-musyoka-data-and-ai-pro.netlify.app/)
-
----
-
-# Acknowledgements
+## Acknowledgements
 
 This project was completed as part of the **CloudHER by WIICA** Cloud Computing mentorship program.
 
-Special appreciation to my mentor **Rajpreet Gill** for her guidance, technical direction, and encouragement throughout the CloudHER journey.
-
-The project provided an opportunity to move beyond individual AWS services and understand how multiple cloud components work together to build a more resilient architecture.
-
-I am especially grateful for the troubleshooting experience gained from this lab. The issues involving public connectivity, IMDSv2, User Data, Launch Template versions, and Auto Scaling behavior turned configuration problems into practical cloud engineering lessons.
+Special appreciation to my mentor **Rajpreet Gill** for the guidance and technical direction throughout the program.
 
 ---
 
-# License
+## License
 
-This project is intended for **educational and portfolio purposes**.
-
----
-
-> 💡 **Tip for future me:** Don't just ask whether an EC2 instance is running. Ask whether it is correctly configured, healthy, reachable, registered with the load balancer, and replaceable by the Auto Scaling Group. Cloud infrastructure is a system of connected components — troubleshoot the path, not just the symptom.
+This project is intended for educational and portfolio purposes.
+```
